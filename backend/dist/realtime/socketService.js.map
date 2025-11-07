@@ -1,0 +1,1 @@
+{"version":3,"file":"socketService.js","sourceRoot":"","sources":["../../src/realtime/socketService.ts"],"names":[],"mappings":";;;AAEA,IAAI,UAAU,GAAkB,IAAI,CAAC;AAE9B,MAAM,eAAe,GAAG,CAAC,EAAU,EAAQ,EAAE;IAClD,UAAU,GAAG,EAAE,CAAC;AAClB,CAAC,CAAC;AAFW,QAAA,eAAe,mBAE1B;AAEK,MAAM,eAAe,GAAG,GAAkB,EAAE,CAAC,UAAU,CAAC;AAAlD,QAAA,eAAe,mBAAmC"}

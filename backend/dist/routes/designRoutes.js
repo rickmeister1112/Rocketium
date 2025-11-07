@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const designController_1 = require("../controllers/designController");
+const CommentRepository_1 = require("../repositories/CommentRepository");
+const DesignRepository_1 = require("../repositories/DesignRepository");
+const SocketDesignEventPublisher_1 = require("../realtime/SocketDesignEventPublisher");
+const DesignService_1 = require("../services/DesignService");
+const router = (0, express_1.Router)();
+const designRepository = new DesignRepository_1.MongoDesignRepository();
+const commentRepository = new CommentRepository_1.MongoCommentRepository();
+const eventPublisher = new SocketDesignEventPublisher_1.SocketDesignEventPublisher();
+const designService = new DesignService_1.DesignService(designRepository, commentRepository, eventPublisher);
+const controller = new designController_1.DesignController(designService);
+router.get('/', controller.listDesigns);
+router.post('/', controller.createDesign);
+router.get('/:id', controller.getDesign);
+router.put('/:id', controller.updateDesign);
+router.get('/:id/comments', controller.listComments);
+router.post('/:id/comments', controller.createComment);
+router.put('/:id/comments/:commentId', controller.updateComment);
+exports.default = router;
+//# sourceMappingURL=designRoutes.js.map
