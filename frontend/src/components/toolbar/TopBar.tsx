@@ -28,12 +28,10 @@ const initialsFor = (name: string): string => {
 
 export const TopBar = ({ stageRef, commentMode, onToggleCommentMode, collaborators }: TopBarProps) => {
   const dispatch = useAppDispatch();
-  const { name, historyLength, futureLength, dirty } = useAppSelector((state) => ({
-    name: state.canvas.name,
-    historyLength: state.canvas.history.length,
-    futureLength: state.canvas.future.length,
-    dirty: state.canvas.dirty,
-  }));
+  const name = useAppSelector((state) => state.canvas.name);
+  const historyLength = useAppSelector((state) => state.canvas.history.length);
+  const futureLength = useAppSelector((state) => state.canvas.future.length);
+  const dirty = useAppSelector((state) => state.canvas.dirty);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const canUndo = useMemo(() => historyLength > 1, [historyLength]);

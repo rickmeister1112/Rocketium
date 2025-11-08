@@ -47,6 +47,13 @@ button {
   transition: background 150ms ease, border-color 150ms ease;
 }
 
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
 button:hover {
   background-color: #f3f4f6;
 }

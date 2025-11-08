@@ -21,9 +21,13 @@ export const loadDesign = createAsyncThunk(
   },
 );
 
+interface SaveOptions {
+  silent?: boolean;
+}
+
 export const saveDesign = createAsyncThunk(
   'canvas/saveDesign',
-  async (_arg, { dispatch, getState }) => {
+  async (options: SaveOptions | undefined, { dispatch, getState }) => {
     const state = getState() as RootState;
     const designId = state.canvas.designId;
     if (!designId) return null;
@@ -37,7 +41,9 @@ export const saveDesign = createAsyncThunk(
 
     const design = await DesignApi.update(designId, payload);
     dispatch(markSaved());
-    dispatch(showToast({ id: Date.now().toString(), kind: 'success', message: 'Design saved' }));
+    if (!options?.silent) {
+      dispatch(showToast({ id: Date.now().toString(), kind: 'success', message: 'Design saved' }));
+    }
     dispatch(fetchDesigns());
     return design;
   },

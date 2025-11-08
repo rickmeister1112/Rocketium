@@ -50,10 +50,23 @@ export const useCurrentUser = () => {
     [user],
   );
 
+  const promptForName = useCallback((): string | undefined => {
+    const existing = user.name ?? '';
+    const input = window.prompt('Enter your name', existing) ?? '';
+    const trimmed = input.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const next = { ...user, name: trimmed };
+    persistUser(next);
+    setUser(next);
+    return trimmed;
+  }, [user]);
+
   useEffect(() => {
     persistUser(user);
   }, [user]);
 
-  return { user, setUserName };
+  return { user, setUserName, promptForName };
 };
 

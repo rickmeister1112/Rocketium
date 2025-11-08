@@ -19,7 +19,7 @@ import {
 import { applyRemoteUpdate } from '../store/canvasSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setPresence, updateCursor, resetPresence } from '../store/presenceSlice';
-import { loadDesign } from '../store/thunks';
+import { loadDesign, saveDesign } from '../store/thunks';
 import { showToast } from '../store/uiSlice';
 import type { DesignElement } from '../types/design';
 
@@ -44,6 +44,8 @@ export const DesignEditorPage = () => {
     message: string;
     submitting: boolean;
   } | null>(null);
+  const commentSubmitLock = useRef(false);
+  const autosaveTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -135,6 +137,32 @@ export const DesignEditorPage = () => {
     });
   }, [canvas.designId, canvas.elements, canvas.version, user.id]);
 
+  useEffect(() => {
+    if (!canvas.designId || !canvas.dirty) {
+      if (autosaveTimer.current) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      return;
+    }
+
+    if (autosaveTimer.current) {
+      window.clearTimeout(autosaveTimer.current);
+    }
+
+    autosaveTimer.current = window.setTimeout(() => {
+      console.log('[DesignEditorPage] autosave triggered');
+      dispatch(saveDesign({ silent: true }));
+    }, 2500);
+
+    return () => {
+      if (autosaveTimer.current) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+    };
+  }, [canvas.designId, canvas.dirty, canvas.version, dispatch]);
+
   const collaborators = useMemo(
     () => presence.filter((member) => member.userId !== user.id),
     [presence, user.id],
@@ -155,7 +183,17 @@ export const DesignEditorPage = () => {
   };
 
   const handleSubmitComment = async (): Promise<void> => {
-    if (!commentDraft || !canvas.designId) return;
+    if (!commentDraft || !canvas.designId) {
+      console.log('[DesignEditorPage] handleSubmitComment aborted: missing draft or designId', {
+        commentDraft,
+        designId: canvas.designId,
+      });
+      return;
+    }
+    if (commentDraft.submitting || commentSubmitLock.current) {
+      console.log('[DesignEditorPage] handleSubmitComment aborted: already submitting');
+      return;
+    }
     const { x, y, message } = commentDraft;
     if (!message.trim()) {
       setCommentDraft(null);
@@ -172,8 +210,17 @@ export const DesignEditorPage = () => {
       setCommentDraft((draft) => (draft ? { ...draft, submitting: false } : draft));
       return;
     }
+    commentSubmitLock.current = true;
     setCommentDraft((draft) => (draft ? { ...draft, submitting: true } : draft));
     try {
+      console.log('[DesignEditorPage] dispatching postComment from canvas overlay', {
+        designId: canvas.designId,
+        authorId: user.id,
+        authorName: user.name,
+        x,
+        y,
+        message,
+      });
       await dispatch(
         postComment({
           designId: canvas.designId,
@@ -186,6 +233,7 @@ export const DesignEditorPage = () => {
           },
         }),
       ).unwrap();
+      console.log('[DesignEditorPage] postComment resolved from canvas overlay');
       setCommentDraft(null);
     } catch (error) {
       const err = error as { message?: string } | undefined;
@@ -196,8 +244,10 @@ export const DesignEditorPage = () => {
           message: err?.message ?? 'Unable to add comment',
         }),
       );
+      console.error('[DesignEditorPage] postComment failed', error);
       setCommentDraft(null);
     }
+    commentSubmitLock.current = false;
   };
 
   return (
@@ -241,11 +291,21 @@ export const DesignEditorPage = () => {
               <textarea
                 placeholder="Add a comment"
                 value={commentDraft.message}
-                onChange={(event) =>
-                  setCommentDraft((draft) =>
-                    draft ? { ...draft, message: event.currentTarget.value } : draft,
-                  )
-                }
+                onChange={(event) => {
+                  const nextValue = event.currentTarget.value;
+                  setCommentDraft((draft) => (draft ? { ...draft, message: nextValue } : draft));
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    void handleSubmitComment();
+                  } else if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setCommentDraft(null);
+                  }
+                }}
                 rows={3}
                 autoFocus
               />

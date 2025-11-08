@@ -10,9 +10,18 @@ import { setSocketServer } from './realtime/socketService';
 
 const server = http.createServer(app);
 
+const allowedOrigins = env.clientUrls;
+const localhostPattern = /^http:\/\/localhost:\d+$/;
+
 const io = new Server(server, {
   cors: {
-    origin: env.clientUrl,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || localhostPattern.test(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   },
 });

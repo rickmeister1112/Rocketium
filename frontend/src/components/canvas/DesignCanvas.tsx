@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { Layer, Rect, Stage, Text as KonvaText, Circle as KonvaCircle, Transformer, Image as KonvaImage } from 'react-konva';
+import {
+  Layer,
+  Rect,
+  Stage,
+  Text as KonvaText,
+  Transformer,
+  Image as KonvaImage,
+  Circle as KonvaCircle,
+  Group,
+  Line,
+  Label,
+  Tag,
+} from 'react-konva';
 import type Konva from 'konva';
 import useImage from 'use-image';
 
@@ -48,6 +60,11 @@ export const DesignCanvas = ({
     fill: string;
     textAlign: 'left' | 'center' | 'right';
   } | null>(null);
+  const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null);
+
+  const COMMENT_MARKER_WIDTH = 28;
+  const COMMENT_MARKER_HEIGHT = 18;
+  const COMMENT_MARKER_POINTER_HEIGHT = 6;
 
   const measureTextWidth = (text: string, fontSize: number, fontFamily: string, fontWeight: string): number => {
     const canvas = document.createElement('canvas');
@@ -350,19 +367,91 @@ export const DesignCanvas = ({
           })}
           {comments
             .filter((comment) => comment.x !== undefined && comment.y !== undefined)
-            .map((comment) => (
-              <KonvaCircle
-                key={`comment-marker-${comment.id}`}
-                x={comment.x!}
-                y={comment.y!}
-                radius={9}
-                fill="#f97316"
-                stroke="#1f2937"
-                strokeWidth={1}
-                opacity={0.85}
-                listening={false}
-              />
-            ))}
+            .map((comment) => {
+              const initials = comment.authorName
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((part) => part.charAt(0).toUpperCase())
+                .join('');
+
+              return (
+                <Group
+                  key={`comment-marker-${comment.id}`}
+                  x={comment.x!}
+                  y={comment.y!}
+                  onMouseEnter={() => setHoveredCommentId(comment.id)}
+                  onMouseLeave={() =>
+                    setHoveredCommentId((current) => (current === comment.id ? null : current))
+                  }
+                >
+                  <Rect
+                    x={-COMMENT_MARKER_WIDTH / 2}
+                    y={-(COMMENT_MARKER_HEIGHT + COMMENT_MARKER_POINTER_HEIGHT)}
+                    width={COMMENT_MARKER_WIDTH}
+                    height={COMMENT_MARKER_HEIGHT}
+                    cornerRadius={6}
+                    fill="#fb923c"
+                    stroke="#c2410c"
+                    strokeWidth={1}
+                    shadowColor="rgba(17,24,39,0.2)"
+                    shadowBlur={6}
+                    shadowOffset={{ x: 0, y: 2 }}
+                    shadowOpacity={0.45}
+                  />
+                  <Line
+                    points={[
+                      -6,
+                      -COMMENT_MARKER_POINTER_HEIGHT,
+                      0,
+                      0,
+                      6,
+                      -COMMENT_MARKER_POINTER_HEIGHT,
+                    ]}
+                    closed
+                    fill="#fb923c"
+                    stroke="#c2410c"
+                    strokeWidth={1}
+                  />
+                  <KonvaText
+                    text={initials || '💬'}
+                    x={-COMMENT_MARKER_WIDTH / 2}
+                    y={-(COMMENT_MARKER_HEIGHT + COMMENT_MARKER_POINTER_HEIGHT)}
+                    width={COMMENT_MARKER_WIDTH}
+                    height={COMMENT_MARKER_HEIGHT}
+                    align="center"
+                    verticalAlign="middle"
+                    fontSize={12}
+                    fontStyle="700"
+                    fill="#1f2937"
+                    padding={4}
+                  />
+                  {hoveredCommentId === comment.id && (
+                    <Label
+                      x={0}
+                      y={-(COMMENT_MARKER_HEIGHT + COMMENT_MARKER_POINTER_HEIGHT + 10)}
+                      listening={false}
+                    >
+                      <Tag
+                        fill="rgba(17,24,39,0.92)"
+                        pointerDirection="down"
+                        pointerWidth={10}
+                        pointerHeight={6}
+                        cornerRadius={6}
+                      />
+                      <KonvaText
+                        text={`${comment.authorName}\n${comment.message}`}
+                        fontSize={12}
+                        fill="#f9fafb"
+                        padding={8}
+                        lineHeight={1.3}
+                        width={220}
+                        wrap="word"
+                      />
+                    </Label>
+                  )}
+                </Group>
+              );
+            })}
           <Transformer
             ref={transformerRef}
             rotateEnabled

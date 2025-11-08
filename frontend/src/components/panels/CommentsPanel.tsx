@@ -1,5 +1,4 @@
-import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { postComment, updateComment } from '../../store/commentsSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -35,34 +34,58 @@ export const CommentsPanel = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [editingSubmitting, setEditingSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   if (!designId) {
     return <aside className="comments-panel empty" />;
   }
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
+  const submitComment = async (): Promise<void> => {
     if (!message.trim()) return;
 
-    if (!user.name) {
-      promptForName();
-      if (!user.name) {
+    let displayName = user.name;
+    if (!displayName) {
+      displayName = promptForName();
+      if (!displayName) {
         return;
       }
     }
 
-    await dispatch(
-      postComment({
-        designId,
-        payload: {
-          authorName: user.name,
-          authorId: user.id,
-          message,
-        },
-      }),
-    );
+    if (submittingRef.current) {
+      console.log('[CommentsPanel] submitComment aborted: already submitting');
+      return;
+    }
 
-    setMessage('');
+    submittingRef.current = true;
+    setSubmitting(true);
+
+    try {
+      console.log('[CommentsPanel] dispatching postComment', {
+        designId,
+        authorId: user.id,
+        authorName: displayName,
+        message,
+      });
+      await dispatch(
+        postComment({
+          designId,
+          payload: {
+            authorName: displayName,
+            authorId: user.id,
+            message,
+          },
+        }),
+      ).unwrap();
+      console.log('[CommentsPanel] postComment resolved');
+      setMessage('');
+    } catch (error) {
+      console.error('[CommentsPanel] postComment failed', error);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+      console.log('[CommentsPanel] submitComment reset');
+    }
   };
 
   const startEditing = (commentId: string, currentMessage: string): void => {
@@ -150,17 +173,28 @@ export const CommentsPanel = () => {
         )}
         {items.length === 0 && !loading && <p className="empty">No comments yet.</p>}
       </div>
-      <form onSubmit={handleSubmit} className="comment-form">
-        <textarea
+      <div className="comment-form" role="group">
+            <textarea
           placeholder="Leave a comment. Use @name to mention."
           value={message}
           onChange={(event) => setMessage(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey && !event.metaKey && !event.ctrlKey) {
+              event.preventDefault();
+              event.stopPropagation();
+              void submitComment();
+            }
+          }}
           rows={3}
         />
-        <button type="submit" disabled={!message.trim()}>
+            <button
+              type="button"
+              onClick={() => void submitComment()}
+              disabled={!message.trim() || submitting}
+            >
           Send
         </button>
-      </form>
+      </div>
     </aside>
   );
 };

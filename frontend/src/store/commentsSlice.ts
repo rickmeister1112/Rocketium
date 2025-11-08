@@ -68,7 +68,10 @@ const commentsSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(postComment.fulfilled, (state, action) => {
-        state.items.push(action.payload);
+        const exists = state.items.some((comment) => comment.id === action.payload.id);
+        if (!exists) {
+          state.items.push(action.payload);
+        }
       })
       .addCase(updateComment.fulfilled, (state, action) => {
         const index = state.items.findIndex((comment) => comment.id === action.payload.id);
