@@ -7,6 +7,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { env } from './config/env';
 import { registerDesignHub } from './realtime/designHub';
 import { setSocketServer } from './realtime/socketService';
+import { logger } from './utils/logger';
 
 const server = http.createServer(app);
 
@@ -33,20 +34,17 @@ const start = async (): Promise<void> => {
   await connectDatabase();
 
   server.listen(env.port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`⚡️ Server running on http://localhost:${env.port}`);
+    logger.info({ port: env.port }, 'Server listening');
   });
 };
 
 start().catch((error) => {
-  // eslint-disable-next-line no-console
-  console.error('Failed to start server', error);
+  logger.error({ err: error }, 'Failed to start server');
   process.exit(1);
 });
 
 const shutdown = async (): Promise<void> => {
-  // eslint-disable-next-line no-console
-  console.log('Shutting down gracefully...');
+  logger.info('Shutting down gracefully...');
   io.close();
   server.close();
   await disconnectDatabase();

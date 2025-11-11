@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { DesignApi, type DesignCreateRequest, type DesignUpdateRequest } from '../services/designs';
-import type { Design } from '../types/design';
+import type { Design, DesignMeta } from '../types/design';
 
 interface DesignsState {
-  items: Design[];
+  items: DesignMeta[];
   loading: boolean;
   error?: string;
 }
@@ -33,6 +33,50 @@ export const deleteDesign = createAsyncThunk('designs/delete', async (id: string
   return DesignApi.delete(id);
 });
 
+export const requestDesignAccess = createAsyncThunk(
+  'designs/requestAccess',
+  async (id: string) => {
+    const response = await DesignApi.requestAccess(id);
+    return { id, status: response.status };
+  },
+);
+
+export const respondDesignAccess = createAsyncThunk(
+  'designs/respondAccess',
+  async ({ id, userId, action }: { id: string; userId: string; action: 'approve' | 'deny' }) => {
+    const response = await DesignApi.respondAccess(id, userId, action);
+    return response;
+  },
+);
+
+const toDesignMeta = (design: Design): DesignMeta => {
+  const pendingRequests =
+    design.pendingRequests ??
+    design.collaborators
+      ?.filter((collaborator) => collaborator.status === 'pending')
+      .map((collaborator) => ({
+        userId: collaborator.userId,
+        userName: collaborator.userName,
+        requestedAt: collaborator.requestedAt,
+        status: 'pending' as const,
+      }));
+
+  return {
+    id: design.id,
+    name: design.name,
+    width: design.width,
+    height: design.height,
+    ownerId: design.ownerId,
+    ownerName: design.ownerName,
+    thumbnailUrl: design.thumbnailUrl,
+    updatedAt: design.updatedAt,
+    createdAt: design.createdAt,
+    accessStatus: design.accessStatus,
+    canDelete: design.canDelete,
+    pendingRequests,
+  };
+};
+
 const designsSlice = createSlice({
   name: 'designs',
   initialState,
@@ -52,18 +96,33 @@ const designsSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(createDesign.fulfilled, (state, action) => {
-        state.items.unshift(action.payload);
+        state.items.unshift(toDesignMeta(action.payload));
       })
       .addCase(updateDesignMeta.fulfilled, (state, action) => {
-        const index = state.items.findIndex((item) => item.id === action.payload.id);
+        const meta = toDesignMeta(action.payload);
+        const index = state.items.findIndex((item) => item.id === meta.id);
         if (index !== -1) {
-          state.items[index] = action.payload;
+          state.items[index] = meta;
         } else {
-          state.items.unshift(action.payload);
+          state.items.unshift(meta);
         }
       })
       .addCase(deleteDesign.fulfilled, (state, action) => {
         state.items = state.items.filter((item) => item.id !== action.payload.id);
+      })
+      .addCase(requestDesignAccess.fulfilled, (state, action) => {
+        const { id, status } = action.payload;
+        const target = state.items.find((item) => item.id === id);
+        if (target) {
+          target.accessStatus = status === 'approved' ? 'collaborator' : 'pending';
+        }
+      })
+      .addCase(respondDesignAccess.fulfilled, (state, action) => {
+        const meta = toDesignMeta(action.payload);
+        const index = state.items.findIndex((item) => item.id === meta.id);
+        if (index !== -1) {
+          state.items[index] = meta;
+        }
       });
   },
 });

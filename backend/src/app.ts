@@ -1,18 +1,33 @@
+import compression from 'compression';
 import cors, { type CorsOptions } from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-import morgan from 'morgan';
+import pinoHttp from 'pino-http';
 
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFound';
 import routes from './routes';
+import { logger } from './utils/logger';
 
 const app = express();
 
+app.disable('x-powered-by');
 app.set('etag', false);
 
 app.use(helmet());
+app.use(
+  pinoHttp({
+    logger: logger as unknown as any,
+    customSuccessMessage: () => 'request completed',
+    customErrorMessage: (_req, _res, error) => `request errored: ${error.message}`,
+  }),
+);
+app.use(compression());
+
+if (env.nodeEnv === 'production') {
+  app.set('trust proxy', 1);
+}
 
 const allowedOrigins = env.clientUrls;
 const localhostPattern = /^http:\/\/localhost:\d+$/;
@@ -43,7 +58,6 @@ app.use((_req, res, next) => {
 });
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

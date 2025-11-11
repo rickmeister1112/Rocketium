@@ -1,5 +1,5 @@
 import { http } from './http';
-import type { Comment, Design } from '../types/design';
+import type { Comment, Design, DesignMeta } from '../types/design';
 
 export interface DesignCreateRequest {
   name: string;
@@ -39,8 +39,8 @@ interface ApiResponse<T> {
 }
 
 export const DesignApi = {
-  async list(search?: string): Promise<Design[]> {
-    const response = await http.get<ApiResponse<Design[]>>('/designs', { params: { search } });
+  async list(search?: string): Promise<DesignMeta[]> {
+    const response = await http.get<ApiResponse<DesignMeta[]>>('/designs', { params: { search } });
     return response.data.data;
   },
   async create(payload: DesignCreateRequest): Promise<Design> {
@@ -57,6 +57,14 @@ export const DesignApi = {
   },
   async delete(id: string): Promise<{ id: string }> {
     const response = await http.delete<ApiResponse<{ id: string }>>(`/designs/${id}`);
+    return response.data.data;
+  },
+  async requestAccess(id: string): Promise<{ status: string }> {
+    const response = await http.post<ApiResponse<{ status: string }>>(`/designs/${id}/access-requests`);
+    return response.data.data;
+  },
+  async respondAccess(id: string, userId: string, action: 'approve' | 'deny'): Promise<Design> {
+    const response = await http.post<ApiResponse<Design>>(`/designs/${id}/access-requests/${userId}`, { action });
     return response.data.data;
   },
   async listComments(id: string): Promise<Comment[]> {

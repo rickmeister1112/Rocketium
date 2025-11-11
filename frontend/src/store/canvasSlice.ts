@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { Design, DesignElement } from '../types/design';
-import { cloneElements, normalizeZIndices } from '../utils/elements';
+import { cloneElements, normalizeZIndices, withElementDefaults } from '../utils/elements';
 
 interface UpdateElementPayload {
   id: string;
@@ -82,7 +82,9 @@ const canvasSlice = createSlice({
       state.dirty = false;
 
       if (!shouldPreserveElements) {
-        state.elements = cloneElements(normalizeZIndices(design.elements));
+        state.elements = cloneElements(
+          normalizeZIndices(design.elements.map((element) => withElementDefaults(element))),
+        );
         state.history = [cloneElements(state.elements)];
         state.future = [];
         state.version = 0;
@@ -103,7 +105,10 @@ const canvasSlice = createSlice({
       state.selectedId = action.payload;
     },
     addElement(state, action: PayloadAction<DesignElement>) {
-      const element = { ...action.payload, zIndex: state.elements.length } as DesignElement;
+      const element = {
+        ...withElementDefaults(action.payload),
+        zIndex: state.elements.length,
+      } as DesignElement;
       state.elements.push(element);
       state.selectedId = element.id;
       state.dirty = true;
@@ -120,7 +125,9 @@ const canvasSlice = createSlice({
       commitHistory(state);
     },
     replaceElements(state, action: PayloadAction<DesignElement[]>) {
-      state.elements = cloneElements(normalizeZIndices(action.payload));
+      state.elements = cloneElements(
+        normalizeZIndices(action.payload.map((element) => withElementDefaults(element))),
+      );
       state.dirty = true;
       state.version += 1;
       commitHistory(state);
@@ -205,7 +212,9 @@ const canvasSlice = createSlice({
     },
     applyRemoteUpdate(state, action: PayloadAction<RemoteUpdatePayload>) {
       const { elements, version } = action.payload;
-      state.elements = cloneElements(normalizeZIndices(elements));
+      state.elements = cloneElements(
+        normalizeZIndices(elements.map((element) => withElementDefaults(element))),
+      );
       state.version = version;
     },
   },

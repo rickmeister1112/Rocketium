@@ -6,6 +6,8 @@ export interface IDesignRepository {
     findById(id: string): Promise<DesignDocument | null>;
     update(id: string, payload: DesignUpdateInput): Promise<DesignDocument | null>;
     exists(id: string): Promise<boolean>;
+    delete(id: string): Promise<DesignDocument | null>;
+    save(design: DesignDocument): Promise<DesignDocument>;
 }
 export declare class MongoDesignRepository implements IDesignRepository {
     create(payload: DesignCreateInput): Promise<DesignDocument>;
@@ -13,5 +15,7 @@ export declare class MongoDesignRepository implements IDesignRepository {
     findById(id: string): Promise<DesignDocument | null>;
     update(id: string, payload: DesignUpdateInput): Promise<DesignDocument | null>;
     exists(id: string): Promise<boolean>;
+    delete(id: string): Promise<DesignDocument | null>;
+    save(design: DesignDocument): Promise<DesignDocument>;
 }
 //# sourceMappingURL=DesignRepository.d.ts.map

@@ -1,4 +1,4 @@
-export type DesignElementType = 'text' | 'image' | 'shape';
+import type { DesignElementType, FontWeight, ImageFitMode, ShapeType, TextAlignment } from './enums';
 export interface BaseElement {
     id: string;
     name: string;
@@ -9,38 +9,49 @@ export interface BaseElement {
     rotation: number;
     width: number;
     height: number;
+    opacity: number;
 }
 export interface TextElement extends BaseElement {
     type: 'text';
     text: string;
     fontFamily: string;
     fontSize: number;
-    fontWeight: 'normal' | 'bold';
+    fontWeight: FontWeight;
     fill: string;
-    textAlign: 'left' | 'center' | 'right';
+    textAlign: TextAlignment;
 }
 export interface ImageElement extends BaseElement {
     type: 'image';
-    imageUrl: string;
-    opacity: number;
-    fit: 'contain' | 'cover';
+    url: string;
+    fit: ImageFitMode;
 }
 export interface ShapeElement extends BaseElement {
     type: 'shape';
-    shapeType: 'rect' | 'circle';
+    shapeType: ShapeType;
     fill: string;
     stroke: string;
     strokeWidth: number;
-    radius?: number;
+    cornerRadius?: number;
 }
 export type DesignElement = TextElement | ImageElement | ShapeElement;
+export type CollaboratorStatus = 'pending' | 'approved' | 'denied';
+export interface DesignCollaborator {
+    userId: string;
+    userName?: string;
+    status: CollaboratorStatus;
+    requestedAt: string;
+    respondedAt?: string;
+}
 export interface DesignSnapshot {
     _id: string;
     name: string;
     width: number;
     height: number;
+    ownerId?: string;
+    ownerName?: string;
     elements: DesignElement[];
     thumbnailUrl?: string;
+    collaborators: DesignCollaborator[];
     createdAt: string;
     updatedAt: string;
 }

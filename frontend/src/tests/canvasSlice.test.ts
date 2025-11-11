@@ -20,6 +20,8 @@ const baseDesign: Design = {
   elements: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
+  accessStatus: 'owner',
+  canDelete: true,
 };
 
 describe('canvasSlice', () => {

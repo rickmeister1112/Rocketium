@@ -27,7 +27,7 @@ export const DesignEditorPage = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { user } = useCurrentUser();
+  const { user, hasSession, loading: userLoading } = useCurrentUser();
   const stageRef = useRef<Konva.Stage | null>(null);
   const socketRef = useRef<ReturnType<typeof connectSocket> | null>(null);
   const suppressBroadcast = useRef(false);
@@ -48,8 +48,17 @@ export const DesignEditorPage = () => {
   const autosaveTimer = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!userLoading && !hasSession) {
+      navigate('/auth/login');
+    }
+  }, [userLoading, hasSession, navigate]);
+
+  useEffect(() => {
     if (!id) {
       navigate('/');
+      return;
+    }
+    if (!hasSession) {
       return;
     }
     dispatch(loadDesign(id)).unwrap().catch(() => {
@@ -61,10 +70,10 @@ export const DesignEditorPage = () => {
     return () => {
       dispatch(resetComments());
     };
-  }, [dispatch, id, navigate]);
+  }, [dispatch, hasSession, id, navigate]);
 
   useEffect(() => {
-    if (!id) {
+    if (!id || !hasSession || !user.id) {
       return () => undefined;
     }
 
@@ -119,10 +128,10 @@ export const DesignEditorPage = () => {
       dispatch(resetPresence());
       disconnectSocket();
     };
-  }, [dispatch, id, navigate, user.id, user.name]);
+  }, [dispatch, hasSession, id, navigate, user.id, user.name]);
 
   useEffect(() => {
-    if (!canvas.designId) return;
+    if (!canvas.designId || !hasSession || !user.id) return;
     if (!socketRef.current || !socketRef.current.connected) return;
     if (suppressBroadcast.current) {
       suppressBroadcast.current = false;
@@ -135,7 +144,7 @@ export const DesignEditorPage = () => {
       patch: canvas.elements,
       version: canvas.version,
     });
-  }, [canvas.designId, canvas.elements, canvas.version, user.id]);
+  }, [canvas.designId, canvas.elements, canvas.version, hasSession, user.id]);
 
   useEffect(() => {
     if (!canvas.designId || !canvas.dirty) {
@@ -151,7 +160,6 @@ export const DesignEditorPage = () => {
     }
 
     autosaveTimer.current = window.setTimeout(() => {
-      console.log('[DesignEditorPage] autosave triggered');
       dispatch(saveDesign({ silent: true }));
     }, 2500);
 
@@ -184,14 +192,9 @@ export const DesignEditorPage = () => {
 
   const handleSubmitComment = async (): Promise<void> => {
     if (!commentDraft || !canvas.designId) {
-      console.log('[DesignEditorPage] handleSubmitComment aborted: missing draft or designId', {
-        commentDraft,
-        designId: canvas.designId,
-      });
       return;
     }
     if (commentDraft.submitting || commentSubmitLock.current) {
-      console.log('[DesignEditorPage] handleSubmitComment aborted: already submitting');
       return;
     }
     const { x, y, message } = commentDraft;
@@ -213,14 +216,6 @@ export const DesignEditorPage = () => {
     commentSubmitLock.current = true;
     setCommentDraft((draft) => (draft ? { ...draft, submitting: true } : draft));
     try {
-      console.log('[DesignEditorPage] dispatching postComment from canvas overlay', {
-        designId: canvas.designId,
-        authorId: user.id,
-        authorName: user.name,
-        x,
-        y,
-        message,
-      });
       await dispatch(
         postComment({
           designId: canvas.designId,
@@ -233,7 +228,6 @@ export const DesignEditorPage = () => {
           },
         }),
       ).unwrap();
-      console.log('[DesignEditorPage] postComment resolved from canvas overlay');
       setCommentDraft(null);
     } catch (error) {
       const err = error as { message?: string } | undefined;
@@ -244,7 +238,6 @@ export const DesignEditorPage = () => {
           message: err?.message ?? 'Unable to add comment',
         }),
       );
-      console.error('[DesignEditorPage] postComment failed', error);
       setCommentDraft(null);
     }
     commentSubmitLock.current = false;

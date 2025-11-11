@@ -3,11 +3,14 @@ import type { ChangeEvent } from 'react';
 import { updateElement } from '../../store/canvasSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import type { DesignElement, ShapeElement, TextElement } from '../../types/design';
+import { FONT_WEIGHTS, TEXT_ALIGNMENTS } from '../../types/enums';
 
 const numberValue = (value: string, fallback: number): number => {
   const parsed = Number(value);
   return Number.isNaN(parsed) ? fallback : parsed;
 };
+
+const toLabel = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
 
 export const InspectorPanel = () => {
   const dispatch = useAppDispatch();
@@ -63,8 +66,11 @@ export const InspectorPanel = () => {
               value={textElement.fontWeight}
               onChange={(event) => update({ fontWeight: event.currentTarget.value as TextElement['fontWeight'] })}
             >
-              <option value="normal">Normal</option>
-              <option value="bold">Bold</option>
+              {FONT_WEIGHTS.map((weight) => (
+                <option key={weight} value={weight}>
+                  {toLabel(weight)}
+                </option>
+              ))}
             </select>
           </label>
           <label>
@@ -77,9 +83,11 @@ export const InspectorPanel = () => {
               value={textElement.textAlign}
               onChange={(event) => update({ textAlign: event.currentTarget.value as TextElement['textAlign'] })}
             >
-              <option value="left">Left</option>
-              <option value="center">Center</option>
-              <option value="right">Right</option>
+              {TEXT_ALIGNMENTS.map((alignment) => (
+                <option key={alignment} value={alignment}>
+                  {toLabel(alignment)}
+                </option>
+              ))}
             </select>
           </label>
         </section>

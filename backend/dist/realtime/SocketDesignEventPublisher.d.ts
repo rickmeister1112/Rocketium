@@ -5,5 +5,6 @@ export declare class SocketDesignEventPublisher implements IDesignEventPublisher
     notifyDesignUpdated(design: DesignDocument): void;
     notifyCommentCreated(comment: CommentDocument): void;
     notifyCommentUpdated(comment: CommentDocument): void;
+    notifyDesignDeleted(designId: string): void;
 }
 //# sourceMappingURL=SocketDesignEventPublisher.d.ts.map

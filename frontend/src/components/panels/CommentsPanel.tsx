@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { postComment, updateComment } from '../../store/commentsSlice';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { showToast } from '../../store/uiSlice';
 
 const mentionRegex = /(@[a-zA-Z0-9._-]+)/g;
 
@@ -44,16 +45,16 @@ export const CommentsPanel = () => {
   const submitComment = async (): Promise<void> => {
     if (!message.trim()) return;
 
-    let displayName = user.name;
-    if (!displayName) {
-      displayName = promptForName();
-      if (!displayName) {
+    let author = user;
+    if (!author.name) {
+      const updated = await promptForName();
+      if (!updated) {
         return;
       }
+      author = { id: updated.id, name: updated.name };
     }
 
     if (submittingRef.current) {
-      console.log('[CommentsPanel] submitComment aborted: already submitting');
       return;
     }
 
@@ -61,30 +62,29 @@ export const CommentsPanel = () => {
     setSubmitting(true);
 
     try {
-      console.log('[CommentsPanel] dispatching postComment', {
-        designId,
-        authorId: user.id,
-        authorName: displayName,
-        message,
-      });
       await dispatch(
         postComment({
           designId,
           payload: {
-            authorName: displayName,
-            authorId: user.id,
+            authorName: author.name,
+            authorId: author.id,
             message,
           },
         }),
       ).unwrap();
-      console.log('[CommentsPanel] postComment resolved');
       setMessage('');
     } catch (error) {
-      console.error('[CommentsPanel] postComment failed', error);
+      const err = error as { message?: string } | undefined;
+      dispatch(
+        showToast({
+          id: Date.now().toString(),
+          kind: 'error',
+          message: err?.message ?? 'Unable to add comment.',
+        }),
+      );
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
-      console.log('[CommentsPanel] submitComment reset');
     }
   };
 

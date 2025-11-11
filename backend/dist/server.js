@@ -10,10 +10,19 @@ const database_1 = require("./config/database");
 const env_1 = require("./config/env");
 const designHub_1 = require("./realtime/designHub");
 const socketService_1 = require("./realtime/socketService");
+const logger_1 = require("./utils/logger");
 const server = node_http_1.default.createServer(app_1.default);
+const allowedOrigins = env_1.env.clientUrls;
+const localhostPattern = /^http:\/\/localhost:\d+$/;
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: env_1.env.clientUrl,
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin) || localhostPattern.test(origin)) {
+                callback(null, true);
+                return;
+            }
+            callback(new Error(`Origin ${origin} not allowed by CORS`));
+        },
         credentials: true,
     },
 });
@@ -22,18 +31,15 @@ const io = new socket_io_1.Server(server, {
 const start = async () => {
     await (0, database_1.connectDatabase)();
     server.listen(env_1.env.port, () => {
-        // eslint-disable-next-line no-console
-        console.log(`⚡️ Server running on http://localhost:${env_1.env.port}`);
+        logger_1.logger.info({ port: env_1.env.port }, 'Server listening');
     });
 };
 start().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.error('Failed to start server', error);
+    logger_1.logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
 });
 const shutdown = async () => {
-    // eslint-disable-next-line no-console
-    console.log('Shutting down gracefully...');
+    logger_1.logger.info('Shutting down gracefully...');
     io.close();
     server.close();
     await (0, database_1.disconnectDatabase)();

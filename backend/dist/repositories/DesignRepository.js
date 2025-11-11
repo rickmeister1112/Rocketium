@@ -9,7 +9,10 @@ class MongoDesignRepository {
         return design;
     }
     async list(search) {
-        const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
+        const filter = {};
+        if (search) {
+            filter.name = { $regex: search, $options: 'i' };
+        }
         return Design_1.Design.find(filter).sort({ updatedAt: -1 }).exec();
     }
     async findById(id) {
@@ -30,6 +33,15 @@ class MongoDesignRepository {
         }
         const exists = await Design_1.Design.exists({ _id: new mongoose_1.Types.ObjectId(id) }).exec();
         return Boolean(exists);
+    }
+    async delete(id) {
+        if (!mongoose_1.Types.ObjectId.isValid(id)) {
+            return null;
+        }
+        return Design_1.Design.findByIdAndDelete(id).exec();
+    }
+    async save(design) {
+        return design.save();
     }
 }
 exports.MongoDesignRepository = MongoDesignRepository;

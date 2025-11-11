@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerDesignHub = void 0;
+exports.registerDesignHub = exports.clearDesignSession = void 0;
 const presenceByDesign = new Map();
+const latestSnapshotByDesign = new Map();
 const getPresenceMap = (designId) => {
     if (!presenceByDesign.has(designId)) {
         presenceByDesign.set(designId, new Map());
@@ -14,6 +15,11 @@ const pickColor = (index) => {
     const color = COLORS[safeIndex];
     return color ?? '#34c759';
 };
+const clearDesignSession = (designId) => {
+    presenceByDesign.delete(designId);
+    latestSnapshotByDesign.delete(designId);
+};
+exports.clearDesignSession = clearDesignSession;
 const broadcastPresence = (io, designId) => {
     const presence = Array.from(getPresenceMap(designId).values());
     io.to(designId).emit('design:presence', { designId, presence });
@@ -29,7 +35,7 @@ const handleDisconnect = (io, socket) => {
     }
     presenceMap.delete(userId);
     if (presenceMap.size === 0) {
-        presenceByDesign.delete(designId);
+        (0, exports.clearDesignSession)(designId);
     }
     broadcastPresence(io, designId);
 };
@@ -46,6 +52,10 @@ const registerDesignHub = (io) => {
             socket.emit('design:joined', { designId, color });
             broadcastPresence(io, designId);
             socket.to(designId).emit('design:user_joined', { designId, userId, name, color });
+            const snapshot = latestSnapshotByDesign.get(designId);
+            if (snapshot) {
+                socket.emit('design:sync', { designId, ...snapshot });
+            }
         });
         socket.on('design:leave', () => {
             const { designId } = socket.data;
@@ -56,6 +66,7 @@ const registerDesignHub = (io) => {
         });
         socket.on('design:update', (payload) => {
             const { designId, userId, patch, version } = payload;
+            latestSnapshotByDesign.set(designId, { patch, version });
             socket.to(designId).emit('design:updated', { designId, userId, patch, version });
         });
         socket.on('cursor:update', (payload) => {

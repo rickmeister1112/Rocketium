@@ -1,4 +1,10 @@
-export type ElementType = 'text' | 'image' | 'shape';
+import type {
+  ElementType,
+  FontWeight,
+  ImageFitMode,
+  ShapeType,
+  TextAlignment,
+} from './enums';
 
 export interface BaseElement {
   id: string;
@@ -18,20 +24,20 @@ export interface TextElement extends BaseElement {
   text: string;
   fontFamily: string;
   fontSize: number;
-  fontWeight: 'normal' | 'bold';
+  fontWeight: FontWeight;
   fill: string;
-  textAlign: 'left' | 'center' | 'right';
+  textAlign: TextAlignment;
 }
 
 export interface ImageElement extends BaseElement {
   type: 'image';
   url: string;
-  fit: 'contain' | 'cover';
+  fit: ImageFitMode;
 }
 
 export interface ShapeElement extends BaseElement {
   type: 'shape';
-  shapeType: 'rect' | 'circle';
+  shapeType: ShapeType;
   fill: string;
   stroke: string;
   strokeWidth: number;
@@ -40,18 +46,41 @@ export interface ShapeElement extends BaseElement {
 
 export type DesignElement = TextElement | ImageElement | ShapeElement;
 
+export type DesignAccessStatus = 'owner' | 'collaborator' | 'pending' | 'denied' | 'none';
+
+export interface DesignCollaborator {
+  userId: string;
+  userName?: string;
+  status: 'pending' | 'approved' | 'denied';
+  requestedAt: string;
+  respondedAt?: string;
+}
+
+export interface DesignAccessRequest {
+  userId: string;
+  userName?: string;
+  requestedAt: string;
+  status?: 'pending';
+}
+
 export interface DesignMeta {
   id: string;
   name: string;
   width: number;
   height: number;
+  ownerId?: string;
+  ownerName?: string;
   thumbnailUrl?: string;
   updatedAt: string;
   createdAt: string;
+  accessStatus: DesignAccessStatus;
+  canDelete: boolean;
+  pendingRequests?: DesignAccessRequest[];
 }
 
 export interface Design extends DesignMeta {
   elements: DesignElement[];
+  collaborators?: DesignCollaborator[];
 }
 
 export interface Comment {

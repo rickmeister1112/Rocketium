@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SocketDesignEventPublisher = void 0;
+const designHub_1 = require("./designHub");
 const socketService_1 = require("./socketService");
 class SocketDesignEventPublisher {
     notifyDesignUpdated(design) {
@@ -34,6 +35,15 @@ class SocketDesignEventPublisher {
             designId: comment.designId.toString(),
             comment: comment.toJSON(),
         });
+    }
+    notifyDesignDeleted(designId) {
+        const io = (0, socketService_1.getSocketServer)();
+        if (!io) {
+            return;
+        }
+        io.to(designId).emit('design:deleted', { designId });
+        io.in(designId).socketsLeave(designId);
+        (0, designHub_1.clearDesignSession)(designId);
     }
 }
 exports.SocketDesignEventPublisher = SocketDesignEventPublisher;

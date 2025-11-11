@@ -7,6 +7,9 @@ export declare class DesignController {
     readonly listDesigns: (req: Request, res: Response, next: import("express").NextFunction) => void;
     readonly getDesign: (req: Request, res: Response, next: import("express").NextFunction) => void;
     readonly updateDesign: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    readonly deleteDesign: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    readonly requestAccess: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    readonly respondToAccessRequest: (req: Request, res: Response, next: import("express").NextFunction) => void;
     readonly createComment: (req: Request, res: Response, next: import("express").NextFunction) => void;
     readonly listComments: (req: Request, res: Response, next: import("express").NextFunction) => void;
     readonly updateComment: (req: Request, res: Response, next: import("express").NextFunction) => void;

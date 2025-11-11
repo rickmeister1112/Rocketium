@@ -14,5 +14,6 @@ export const env = {
   port: parseInt(process.env.PORT ?? '4000', 10),
   mongoUri: process.env.MONGO_URI ?? 'mongodb://localhost:27017/rocketium',
   clientUrls,
+  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-change-me',
 };
 

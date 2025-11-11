@@ -8,6 +8,7 @@ export declare const designElementSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     rotation: z.ZodNumber;
     width: z.ZodNumber;
     height: z.ZodNumber;
+    opacity: z.ZodDefault<z.ZodNumber>;
     type: z.ZodLiteral<"text">;
     text: z.ZodString;
     fontFamily: z.ZodString;
@@ -31,9 +32,9 @@ export declare const designElementSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     rotation: z.ZodNumber;
     width: z.ZodNumber;
     height: z.ZodNumber;
+    opacity: z.ZodDefault<z.ZodNumber>;
     type: z.ZodLiteral<"image">;
-    imageUrl: z.ZodString;
-    opacity: z.ZodNumber;
+    url: z.ZodString;
     fit: z.ZodEnum<{
         contain: "contain";
         cover: "cover";
@@ -47,6 +48,7 @@ export declare const designElementSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     rotation: z.ZodNumber;
     width: z.ZodNumber;
     height: z.ZodNumber;
+    opacity: z.ZodDefault<z.ZodNumber>;
     type: z.ZodLiteral<"shape">;
     shapeType: z.ZodEnum<{
         rect: "rect";
@@ -55,7 +57,7 @@ export declare const designElementSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     fill: z.ZodString;
     stroke: z.ZodString;
     strokeWidth: z.ZodNumber;
-    radius: z.ZodOptional<z.ZodNumber>;
+    cornerRadius: z.ZodOptional<z.ZodNumber>;
 }, z.core.$strip>], "type">;
 export declare const designCreateSchema: z.ZodObject<{
     name: z.ZodString;
@@ -70,6 +72,7 @@ export declare const designCreateSchema: z.ZodObject<{
         rotation: z.ZodNumber;
         width: z.ZodNumber;
         height: z.ZodNumber;
+        opacity: z.ZodDefault<z.ZodNumber>;
         type: z.ZodLiteral<"text">;
         text: z.ZodString;
         fontFamily: z.ZodString;
@@ -93,9 +96,9 @@ export declare const designCreateSchema: z.ZodObject<{
         rotation: z.ZodNumber;
         width: z.ZodNumber;
         height: z.ZodNumber;
+        opacity: z.ZodDefault<z.ZodNumber>;
         type: z.ZodLiteral<"image">;
-        imageUrl: z.ZodString;
-        opacity: z.ZodNumber;
+        url: z.ZodString;
         fit: z.ZodEnum<{
             contain: "contain";
             cover: "cover";
@@ -109,6 +112,7 @@ export declare const designCreateSchema: z.ZodObject<{
         rotation: z.ZodNumber;
         width: z.ZodNumber;
         height: z.ZodNumber;
+        opacity: z.ZodDefault<z.ZodNumber>;
         type: z.ZodLiteral<"shape">;
         shapeType: z.ZodEnum<{
             rect: "rect";
@@ -117,9 +121,11 @@ export declare const designCreateSchema: z.ZodObject<{
         fill: z.ZodString;
         stroke: z.ZodString;
         strokeWidth: z.ZodNumber;
-        radius: z.ZodOptional<z.ZodNumber>;
+        cornerRadius: z.ZodOptional<z.ZodNumber>;
     }, z.core.$strip>], "type">>>;
     thumbnailUrl: z.ZodOptional<z.ZodString>;
+    ownerId: z.ZodOptional<z.ZodString>;
+    ownerName: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const designUpdateSchema: z.ZodObject<{
     thumbnailUrl: z.ZodOptional<z.ZodOptional<z.ZodString>>;
@@ -135,6 +141,7 @@ export declare const designUpdateSchema: z.ZodObject<{
         rotation: z.ZodNumber;
         width: z.ZodNumber;
         height: z.ZodNumber;
+        opacity: z.ZodDefault<z.ZodNumber>;
         type: z.ZodLiteral<"text">;
         text: z.ZodString;
         fontFamily: z.ZodString;
@@ -158,9 +165,9 @@ export declare const designUpdateSchema: z.ZodObject<{
         rotation: z.ZodNumber;
         width: z.ZodNumber;
         height: z.ZodNumber;
+        opacity: z.ZodDefault<z.ZodNumber>;
         type: z.ZodLiteral<"image">;
-        imageUrl: z.ZodString;
-        opacity: z.ZodNumber;
+        url: z.ZodString;
         fit: z.ZodEnum<{
             contain: "contain";
             cover: "cover";
@@ -174,6 +181,7 @@ export declare const designUpdateSchema: z.ZodObject<{
         rotation: z.ZodNumber;
         width: z.ZodNumber;
         height: z.ZodNumber;
+        opacity: z.ZodDefault<z.ZodNumber>;
         type: z.ZodLiteral<"shape">;
         shapeType: z.ZodEnum<{
             rect: "rect";
@@ -182,8 +190,10 @@ export declare const designUpdateSchema: z.ZodObject<{
         fill: z.ZodString;
         stroke: z.ZodString;
         strokeWidth: z.ZodNumber;
-        radius: z.ZodOptional<z.ZodNumber>;
+        cornerRadius: z.ZodOptional<z.ZodNumber>;
     }, z.core.$strip>], "type">>>;
+    ownerId: z.ZodOptional<z.ZodString>;
+    ownerName: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
 export declare const commentCreateSchema: z.ZodObject<{
     authorName: z.ZodString;
@@ -198,6 +208,12 @@ export declare const commentUpdateSchema: z.ZodObject<{
     mentions: z.ZodOptional<z.ZodArray<z.ZodString>>;
     x: z.ZodOptional<z.ZodNumber>;
     y: z.ZodOptional<z.ZodNumber>;
+}, z.core.$strip>;
+export declare const designAccessRespondSchema: z.ZodObject<{
+    action: z.ZodEnum<{
+        approve: "approve";
+        deny: "deny";
+    }>;
 }, z.core.$strip>;
 export type DesignCreateInput = z.infer<typeof designCreateSchema>;
 export type DesignUpdateInput = z.infer<typeof designUpdateSchema>;

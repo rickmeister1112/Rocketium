@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { Types, type FilterQuery } from 'mongoose';
 
 import type { DesignDocument } from '../models/Design';
 import { Design } from '../models/Design';
@@ -11,6 +11,7 @@ export interface IDesignRepository {
   update(id: string, payload: DesignUpdateInput): Promise<DesignDocument | null>;
   exists(id: string): Promise<boolean>;
   delete(id: string): Promise<DesignDocument | null>;
+  save(design: DesignDocument): Promise<DesignDocument>;
 }
 
 export class MongoDesignRepository implements IDesignRepository {
@@ -20,7 +21,12 @@ export class MongoDesignRepository implements IDesignRepository {
   }
 
   async list(search?: string): Promise<DesignDocument[]> {
-    const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
+    const filter: FilterQuery<DesignDocument> = {};
+
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' };
+    }
+
     return Design.find(filter).sort({ updatedAt: -1 }).exec();
   }
 
@@ -55,6 +61,10 @@ export class MongoDesignRepository implements IDesignRepository {
       return null;
     }
     return Design.findByIdAndDelete(id).exec();
+  }
+
+  async save(design: DesignDocument): Promise<DesignDocument> {
+    return design.save();
   }
 }
 
